@@ -10,6 +10,13 @@
 
 #include <JuceHeader.h>
 
+#define SIGNAL_HP_FREQ 720.484f;
+#define DRIVE_MULTIPLIER 1.06383f;
+#define DRIVE_OFFSET 11.851f;
+#define HARD_CLIP_FACTOR 1.4f;
+#define OUTPUT_FACTOR .5f;
+#define OUTPUT_LP_FREQ 723.431f;
+
 //==============================================================================
 /**
 */
@@ -54,7 +61,10 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState state;
-    void update();
+//    void update();
+    
+//    static float ocd(float sample);
+    static float cubicPolynomial(float sample);
 private:
     using Bias = juce::dsp::Bias<float>;
     using FilterBand = juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>;
@@ -65,7 +75,8 @@ private:
     OverSampling ov { 2, 4, OverSampling::filterHalfBandPolyphaseIIR, true, false };
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
-    juce::dsp::ProcessorChain<Gain, Bias, Shaper, FilterBand, Gain, FilterBand, FilterBand> drive;
+//    juce::dsp::ProcessorChain<Gain, Bias, Shaper, FilterBand, Gain, FilterBand, FilterBand> drive;
+//    juce::dsp::ProcessorChain<Gain, Shaper, Gain> drive;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrivePedalAudioProcessor)

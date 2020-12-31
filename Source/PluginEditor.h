@@ -25,8 +25,9 @@ public:
     void resized() override;
 
 private:
-    juce::Slider gainKnob;
-    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> gainKnobAttachment;
+    juce::Slider driveKnob, levelKnob, toneKnob;
+
+    std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveKnobAttachment, levelKnobAttachment, toneKnobAttachment;
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DrivePedalAudioProcessor& audioProcessor;
