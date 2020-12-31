@@ -62,10 +62,10 @@ private:
     using OverSampling = juce::dsp::Oversampling<float>;
     using Shaper = juce::dsp::WaveShaper<float>;
     
-    OverSampling ov { 2, 8, OverSampling::filterHalfBandPolyphaseIIR, true, false };
+    OverSampling ov { 2, 4, OverSampling::filterHalfBandPolyphaseIIR, true, false };
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
-    juce::dsp::ProcessorChain<Gain, Bias, Shaper, FilterBand, Gain> drive;
+    juce::dsp::ProcessorChain<Gain, Bias, Shaper, FilterBand, Gain, FilterBand, FilterBand> drive;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrivePedalAudioProcessor)

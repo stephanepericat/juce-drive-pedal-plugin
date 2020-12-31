@@ -158,7 +158,7 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     ov.processSamplesUp(inputBlock);
     drive.process(driveCtx);
     auto& outputBlock = driveCtx.getOutputBlock();
-    outputBlock *= .7f;
+//    outputBlock *= .7f;
     ov.processSamplesDown(outputBlock);
 
     // This is the place where you'd normally do the guts of your plugin's
@@ -211,7 +211,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", juce::NormalisableRange<float>(0.f, 24.f, .1f), 0.f, "dB"));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("GAIN", "Gain", juce::NormalisableRange<float>(0.f, 35.7f, .1f), 12.f, "dB"));
     
     return { params.begin(), params.end() };
 }
@@ -219,10 +219,17 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
 void DrivePedalAudioProcessor::update()
 {
     float sampleRate = getSampleRate();
+    
+    auto rawGainValue = state.getRawParameterValue("GAIN");
+    float gainValue = rawGainValue->load();
+    float postGainValue = -((2 / juce::MathConstants<float>::pi) * gainValue);
 
-    drive.get<0>().setGainDecibels(24.f);
+    drive.get<0>().setGainDecibels(gainValue);
     drive.get<1>().setBias(.4f);
-    drive.get<2>().functionToUse = juce::dsp::FastMathApproximations::tanh;
+//    drive.get<2>().functionToUse = juce::dsp::FastMathApproximations::tanh;
+    drive.get<2>().functionToUse = std::tanh;
     *drive.get<3>().state = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 5.f, .7071f);
-    drive.get<4>().setGainDecibels(-18.f);
+    drive.get<4>().setGainDecibels(postGainValue);
+    *drive.get<5>().state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass(sampleRate, 200.f);
+    *drive.get<6>().state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass(sampleRate, 5000.f);
 }

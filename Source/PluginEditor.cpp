@@ -42,5 +42,5 @@ void DrivePedalAudioProcessorEditor::resized()
 {
     // This is generally where you'll want to lay out the positions of any
     // subcomponents in your editor..
-    gainKnob.setBounds(getWidth() / 2 - 70, getHeight() / 2 - 70, 140, 140);
+    gainKnob.setBounds(getWidth() / 2 - 100, getHeight() / 2 - 100, 200, 200);
 }
