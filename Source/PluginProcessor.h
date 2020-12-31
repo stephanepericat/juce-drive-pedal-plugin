@@ -59,11 +59,12 @@ private:
     using Bias = juce::dsp::Bias<float>;
     using FilterBand = juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>;
     using Gain = juce::dsp::Gain<float>;
-    using OverSampler = juce::dsp::Oversampling<float>;
-    using ParameterLayout = juce::AudioProcessorValueTreeState::ParameterLayout;
+    using OverSampling = juce::dsp::Oversampling<float>;
     using Shaper = juce::dsp::WaveShaper<float>;
     
-    ParameterLayout createParams();
+    OverSampling ov { 2, 8, OverSampling::filterHalfBandPolyphaseIIR, true, false };
+    
+    juce::AudioProcessorValueTreeState::ParameterLayout createParams();
     juce::dsp::ProcessorChain<Gain, Bias, Shaper, FilterBand, Gain> drive;
 
     //==============================================================================

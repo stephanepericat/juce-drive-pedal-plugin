@@ -148,6 +148,18 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     // this code if your algorithm always overwrites all the output channels.
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
+    
+    juce::dsp::AudioBlock<float> audioBlock = juce::dsp::AudioBlock<float>(buffer);
+    juce::dsp::ProcessContextReplacing<float> driveCtx(audioBlock);
+    
+    update();
+    
+    auto& inputBlock = driveCtx.getInputBlock();
+    ov.processSamplesUp(inputBlock);
+    drive.process(driveCtx);
+    auto& outputBlock = driveCtx.getOutputBlock();
+    outputBlock *= .7f;
+    ov.processSamplesDown(outputBlock);
 
     // This is the place where you'd normally do the guts of your plugin's
     // audio processing...
