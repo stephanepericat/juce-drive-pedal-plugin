@@ -62,9 +62,7 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState state;
-//    void update();
-    
-//    static float ocd(float sample);
+
     static float cubicPolynomial(float sample);
     static float hardClip(float sample, float minmax);
 private:
@@ -78,8 +76,6 @@ private:
     OverSampling ov { 2, 4, OverSampling::filterHalfBandPolyphaseIIR, true, false };
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
-//    juce::dsp::ProcessorChain<Gain, Bias, Shaper, FilterBand, Gain, FilterBand, FilterBand> drive;
-//    juce::dsp::ProcessorChain<Gain, Shaper, Gain> drive;
     Mixer mixer;
     FilterBand hp, lp, tone;
     Gain drive, level, trim;

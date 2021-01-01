@@ -183,6 +183,8 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     // Main Process
     // ---------------------------------------
     
+    ov.processSamplesUp(audioBlock);
+
     // 1. high pass at SIGNAL_HP_FREQ
     *hp.state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass(getSampleRate(), SIGNAL_HP_FREQ);
     hp.process(context);
@@ -224,6 +226,8 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     float levelValue = rawLevelValue->load();
     level.setGainLinear(levelValue);
     level.process(context);
+    
+    ov.processSamplesDown(audioBlock);
 }
 
 //==============================================================================
@@ -262,63 +266,13 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(0.f, 24.f, .1f), 12.f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(0.f, 24.f, .01f), 12.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("LEVEL", "Level", juce::NormalisableRange<float>(0.f, 2.f, .01f), 1.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(.1f, 1.5f, .01f), .8f));
     params.push_back(std::make_unique<juce::AudioParameterInt>("BYPASS", "Bypass", 0, 1, 0));
     
     return { params.begin(), params.end() };
 }
-
-//void DrivePedalAudioProcessor::update()
-//{
-//    float sampleRate = getSampleRate();
-    
-//    auto rawGainValue = state.getRawParameterValue("GAIN");
-//    float gainValue = rawGainValue->load();
-//    float postGainValue = -((2 / juce::MathConstants<float>::pi) * gainValue);
-
-//    drive.get<0>().setGainDecibels(gainValue);
-//    drive.get<1>().setBias(.4f);
-//    drive.get<2>().functionToUse = juce::dsp::FastMathApproximations::tanh;
-//    drive.get<2>().functionToUse = std::tanh;
-//    drive.get<2>().functionToUse = ocd;
-//    drive.get<1>().functionToUse = cubicPolynomial;
-//    drive.get<2>().functionToUse = [](float sample)
-//    {
-//        return sample;
-//    };
-
-//    *drive.get<3>().state = *juce::dsp::IIR::Coefficients<float>::makeHighPass(sampleRate, 5.f, .7071f);
-//    drive.get<2>().setGainDecibels(postGainValue);
-//    *drive.get<5>().state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass(sampleRate, 200.f);
-//    *drive.get<6>().state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass(sampleRate, 5000.f);
-//}
-
-/**
- * Taken from: https://github.com/JanosGit/Schrammel_OJD/blob/master/Source/Waveshaper.h
- */
-//float DrivePedalAudioProcessor::ocd(float sample)
-//{
-//    float out = sample;
-//
-//    if (sample <= -1.7f)
-//        out = -1.0f;
-//    else if ((sample > -1.7f) && (sample < -0.3f))
-//    {
-//        sample += 0.3f;
-//        out = sample + (sample * sample) / (4 * (1 - 0.3f)) - 0.3f;
-//    }
-//    else if ((sample > 0.9f) && (sample < 1.1f))
-//    {
-//        sample -= 0.9f;
-//        out = sample - (sample * sample) / (4 * (1 - 0.9f)) + 0.9f;
-//    }
-//    else if (sample > 1.1f)
-//        out = 1.0f;
-//
-//    return out;
-//}
 
 float DrivePedalAudioProcessor::cubicPolynomial(float sample)
 {
