@@ -193,8 +193,8 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     };
     clamp.process(context);
     // 5. trim gain OUTPUT_FACTOR
-    level.setGainLinear(OUTPUT_FACTOR);
-    level.process(context);
+    trim.setGainLinear(OUTPUT_FACTOR);
+    trim.process(context);
     // 6. low pass at OUTPUT_LP_FREQ
     *lp.state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass(getSampleRate(), OUTPUT_LP_FREQ);
     lp.process(context);
@@ -206,10 +206,17 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     // ---------------------------------------
     // Post processing
     // ---------------------------------------
+    
+    // 8. Tone
     auto rawToneValue = state.getRawParameterValue("TONE");
     float toneValue = rawToneValue->load();
     *tone.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(getSampleRate(), OUTPUT_LP_FREQ, DEFAULT_Q, toneValue);
     tone.process(context);
+    // 9. Volume
+    auto rawLevelValue = state.getRawParameterValue("LEVEL");
+    float levelValue = rawLevelValue->load();
+    level.setGainLinear(levelValue);
+    level.process(context);
 }
 
 //==============================================================================
@@ -248,9 +255,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(12.f, 36.f, .01f), 24.f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("LEVEL", "Level", juce::NormalisableRange<float>(0.f, 2.f, .1f), 1.f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(.1f, 1.5f, .1f), .8f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(12.f, 36.f, .1f), 24.f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("LEVEL", "Level", juce::NormalisableRange<float>(0.f, 2.f, .01f), 1.f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(.1f, 1.5f, .01f), .8f));
     
     return { params.begin(), params.end() };
 }

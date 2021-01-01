@@ -82,8 +82,8 @@ private:
 //    juce::dsp::ProcessorChain<Gain, Shaper, Gain> drive;
     Mixer mixer;
     FilterBand hp, lp, tone;
-    Gain drive, level;
-    Shaper clip, clamp;
+    Gain drive, level, trim;
+    Shaper clamp, clip;
     
     std::unique_ptr<juce::dsp::AudioBlock<float>> tempBlock;
 
