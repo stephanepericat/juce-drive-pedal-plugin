@@ -204,6 +204,12 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     outputBlock.multiplyBy(OUTPUT_FACTOR);
     
     // ---------------------------------------
+    // Post processing
+    // ---------------------------------------
+    auto rawToneValue = state.getRawParameterValue("TONE");
+    float toneValue = rawToneValue->load();
+    *tone.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(getSampleRate(), OUTPUT_LP_FREQ, DEFAULT_Q, toneValue);
+    tone.process(context);
 }
 
 //==============================================================================
@@ -244,7 +250,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
     
     params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(12.f, 36.f, .01f), 24.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("LEVEL", "Level", juce::NormalisableRange<float>(0.f, 2.f, .1f), 1.f));
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(-1.f, 1.f, .1f), 0.f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(.1f, 1.5f, .1f), .8f));
     
     return { params.begin(), params.end() };
 }

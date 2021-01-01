@@ -10,6 +10,7 @@
 
 #include <JuceHeader.h>
 
+#define DEFAULT_Q .7071f
 #define SIGNAL_HP_FREQ 320.484f
 #define DRIVE_MULTIPLIER 1.06383f
 #define DRIVE_OFFSET 11.851f
