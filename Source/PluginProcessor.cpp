@@ -189,7 +189,7 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     clip.process(context);
     // 4. hard clip DRIVE_OFFSET
     clamp.functionToUse = [](float sample) {
-        return hardClip(sample, DRIVE_OFFSET);
+        return hardClip(sample, CLIP_LIMIT);
     };
     clamp.process(context);
     // 5. trim gain OUTPUT_FACTOR
@@ -255,7 +255,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(12.f, 36.f, .1f), 24.f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(0.f, 24.f, .1f), 12.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("LEVEL", "Level", juce::NormalisableRange<float>(0.f, 2.f, .01f), 1.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(.1f, 1.5f, .01f), .8f));
     

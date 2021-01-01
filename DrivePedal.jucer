@@ -6,6 +6,8 @@
               companyWebsite="https://shortwavapp.com" companyEmail="contact@shortwavapp.com">
   <MAINGROUP id="OHItTm" name="DrivePedal">
     <GROUP id="{8DC04BA2-9F73-D7BA-6EA2-C73B7E5AC02E}" name="Source">
+      <FILE id="XJeD9Z" name="Overdrive.cpp" compile="1" resource="0" file="Source/Overdrive.cpp"/>
+      <FILE id="dH6eas" name="Overdrive.h" compile="0" resource="0" file="Source/Overdrive.h"/>
       <FILE id="MmKCFZ" name="PluginProcessor.cpp" compile="1" resource="0"
             file="Source/PluginProcessor.cpp"/>
       <FILE id="NX8dUZ" name="PluginProcessor.h" compile="0" resource="0"
