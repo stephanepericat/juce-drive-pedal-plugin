@@ -10,12 +10,12 @@
 
 #include <JuceHeader.h>
 
-#define SIGNAL_HP_FREQ 720.484f;
-#define DRIVE_MULTIPLIER 1.06383f;
-#define DRIVE_OFFSET 11.851f;
-#define HARD_CLIP_FACTOR 1.4f;
-#define OUTPUT_FACTOR .5f;
-#define OUTPUT_LP_FREQ 723.431f;
+#define SIGNAL_HP_FREQ 320.484f
+#define DRIVE_MULTIPLIER 1.06383f
+#define DRIVE_OFFSET 11.851f
+#define DRIVE_OFFSET 1.4f
+#define OUTPUT_FACTOR .5f
+#define OUTPUT_LP_FREQ 2223.431f
 
 //==============================================================================
 /**
@@ -65,10 +65,12 @@ public:
     
 //    static float ocd(float sample);
     static float cubicPolynomial(float sample);
+    static float hardClip(float sample, float minmax);
 private:
     using Bias = juce::dsp::Bias<float>;
     using FilterBand = juce::dsp::ProcessorDuplicator<juce::dsp::IIR::Filter<float>, juce::dsp::IIR::Coefficients<float>>;
     using Gain = juce::dsp::Gain<float>;
+    using Mixer = juce::dsp::DryWetMixer<float>;
     using OverSampling = juce::dsp::Oversampling<float>;
     using Shaper = juce::dsp::WaveShaper<float>;
     
@@ -77,6 +79,12 @@ private:
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
 //    juce::dsp::ProcessorChain<Gain, Bias, Shaper, FilterBand, Gain, FilterBand, FilterBand> drive;
 //    juce::dsp::ProcessorChain<Gain, Shaper, Gain> drive;
+    Mixer mixer;
+    FilterBand hp, lp, tone;
+    Gain drive, level;
+    Shaper clip, clamp;
+    
+    std::unique_ptr<juce::dsp::AudioBlock<float>> tempBlock;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrivePedalAudioProcessor)

@@ -24,6 +24,11 @@ DrivePedalAudioProcessorEditor::DrivePedalAudioProcessorEditor (DrivePedalAudioP
     toneKnob.setSliderStyle(juce::Slider::SliderStyle::RotaryHorizontalVerticalDrag);
     toneKnob.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 25);
     addAndMakeVisible(toneKnob);
+
+//    bypass.onClick = [&]() {
+//
+//    };
+    addAndMakeVisible(bypass);
     
     driveKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.state, "DRIVE", driveKnob);
     levelKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.state, "LEVEL", levelKnob);
@@ -56,4 +61,6 @@ void DrivePedalAudioProcessorEditor::resized()
     levelKnob.setBounds(getWidth() - 130, 10, 120, 120);
 
     driveKnob.setBounds(getWidth() / 2 - 100, getHeight() / 2 - 100, 200, 200);
+    
+    bypass.setBounds(getWidth() / 2 - 50, getHeight() - 120, 100, 100);
 }

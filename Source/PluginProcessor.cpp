@@ -100,6 +100,18 @@ void DrivePedalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     spec.numChannels = getTotalNumOutputChannels();
     spec.sampleRate = sampleRate;
     
+    hp.prepare(spec);
+    level.prepare(spec);
+    lp.prepare(spec);
+    mixer.prepare(spec);
+    tone.prepare(spec);
+    
+    hp.reset();
+    level.reset();
+    lp.reset();
+    mixer.reset();
+    tone.reset();
+    
 //    ov.initProcessing(samplesPerBlock);
 //    ov.reset();
     
@@ -152,30 +164,46 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
-//    juce::dsp::AudioBlock<float> audioBlock = juce::dsp::AudioBlock<float>(buffer);
-//    juce::dsp::ProcessContextReplacing<float> driveCtx(audioBlock);
+    // store dry signal for later
+    juce::AudioBuffer<float> drySignal((size_t)0, buffer.getNumSamples());
+    drySignal = buffer;
+    juce::dsp::AudioBlock<float> dryBlock = juce::dsp::AudioBlock<float>(drySignal);
+    // create processing context for signal
+    juce::dsp::AudioBlock<float> audioBlock = juce::dsp::AudioBlock<float>(buffer);
+    juce::dsp::ProcessContextReplacing<float> context = juce::dsp::ProcessContextReplacing<float>(audioBlock);
     
-//    update();
+    // ---------------------------------------
+    // Main Process
+    // ---------------------------------------
     
-//    auto& inputBlock = driveCtx.getInputBlock();
-//    ov.processSamplesUp(inputBlock);
-//    drive.process(driveCtx);
-//    auto& outputBlock = driveCtx.getOutputBlock();
-////    outputBlock *= .7f;
-//    ov.processSamplesDown(outputBlock);
-
-    // This is the place where you'd normally do the guts of your plugin's
-    // audio processing...
-    // Make sure to reset the state if your inner loop is processing
-    // the samples and the outer loop is handling the channels.
-    // Alternatively, you can process the samples with the channels
-    // interleaved by keeping the same state.
-//    for (int channel = 0; channel < totalNumInputChannels; ++channel)
-//    {
-//        auto* channelData = buffer.getWritePointer (channel);
-//
-//        // ..do something to the data...
-//    }
+    // 1. high pass at SIGNAL_HP_FREQ
+    *hp.state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass(getSampleRate(), SIGNAL_HP_FREQ);
+    hp.process(context);
+    // 2. gain (DRIVE_MULTIPLIER * DRIVE + DRIVE_OFFSET)
+    auto rawDriveValue = state.getRawParameterValue("DRIVE");
+    float driveValue = rawDriveValue->load();
+    drive.setGainDecibels((DRIVE_MULTIPLIER * driveValue) + DRIVE_OFFSET);
+    drive.process(context);
+    // 3. cubic waveshaping (soft clip)
+    clip.functionToUse = cubicPolynomial;
+    clip.process(context);
+    // 4. hard clip DRIVE_OFFSET
+    clamp.functionToUse = [](float sample) {
+        return hardClip(sample, DRIVE_OFFSET);
+    };
+    clamp.process(context);
+    // 5. trim gain OUTPUT_FACTOR
+    level.setGainLinear(OUTPUT_FACTOR);
+    level.process(context);
+    // 6. low pass at OUTPUT_LP_FREQ
+    *lp.state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass(getSampleRate(), OUTPUT_LP_FREQ);
+    lp.process(context);
+    // 7. merge with dry signal and tame volume
+    auto& outputBlock = context.getOutputBlock();
+    outputBlock.add(dryBlock);
+    outputBlock.multiplyBy(OUTPUT_FACTOR);
+    
+    // ---------------------------------------
 }
 
 //==============================================================================
@@ -214,7 +242,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
 {
     std::vector<std::unique_ptr<juce::RangedAudioParameter>> params;
     
-    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(0.f, 12.f, .1f), 6.f));
+    params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(12.f, 36.f, .01f), 24.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("LEVEL", "Level", juce::NormalisableRange<float>(0.f, 2.f, .1f), 1.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(-1.f, 1.f, .1f), 0.f));
     
@@ -274,4 +302,9 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
 float DrivePedalAudioProcessor::cubicPolynomial(float sample)
 {
     return ((3 / 2) * sample) - ((1 / 2) * std::pow(sample, 3));
+}
+
+float DrivePedalAudioProcessor::hardClip(float sample, float minmax)
+{
+    return juce::jlimit(-(minmax), minmax, sample);
 }

@@ -26,6 +26,7 @@ public:
 
 private:
     juce::Slider driveKnob, levelKnob, toneKnob;
+    juce::ToggleButton bypass;
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveKnobAttachment, levelKnobAttachment, toneKnobAttachment;
     // This reference is provided as a quick way for your editor to
