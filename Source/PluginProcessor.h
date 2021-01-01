@@ -62,6 +62,8 @@ public:
     void setStateInformation (const void* data, int sizeInBytes) override;
 
     juce::AudioProcessorValueTreeState state;
+    
+    void updateProcessors();
 
     static float cubicPolynomial(float sample);
     static float hardClip(float sample, float minmax);
@@ -73,15 +75,29 @@ private:
     using OverSampling = juce::dsp::Oversampling<float>;
     using Shaper = juce::dsp::WaveShaper<float>;
     
+    using DistortionProcessor = juce::dsp::ProcessorChain<FilterBand, Gain, Shaper, Shaper, Gain, FilterBand>;
+    using PostProcessor = juce::dsp::ProcessorChain<FilterBand, Gain>;
+    
+    enum DistortionStages {
+        hpFilterIndex,
+        preGainIndex,
+        softClipIndex,
+        hardClipIndex,
+        postGainIndex,
+        lpFilterIndex,
+    };
+    
+    enum PostStages {
+        toneIndex,
+        volumeIndex,
+    };
+    
+    DistortionProcessor distortionProcessor;
+    PostProcessor postProcessor;
+    
     OverSampling ov { 2, 4, OverSampling::filterHalfBandPolyphaseIIR, true, false };
     
     juce::AudioProcessorValueTreeState::ParameterLayout createParams();
-    Mixer mixer;
-    FilterBand hp, lp, tone;
-    Gain drive, level, trim;
-    Shaper clamp, clip;
-    
-    std::unique_ptr<juce::dsp::AudioBlock<float>> tempBlock;
 
     //==============================================================================
     JUCE_DECLARE_NON_COPYABLE_WITH_LEAK_DETECTOR (DrivePedalAudioProcessor)

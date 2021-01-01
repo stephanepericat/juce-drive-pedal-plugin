@@ -100,23 +100,11 @@ void DrivePedalAudioProcessor::prepareToPlay (double sampleRate, int samplesPerB
     spec.numChannels = getTotalNumOutputChannels();
     spec.sampleRate = sampleRate;
     
-    hp.prepare(spec);
-    level.prepare(spec);
-    lp.prepare(spec);
-    mixer.prepare(spec);
-    tone.prepare(spec);
+    distortionProcessor.prepare(spec);
+    postProcessor.prepare(spec);
     
-    hp.reset();
-    level.reset();
-    lp.reset();
-    mixer.reset();
-    tone.reset();
-    
-//    ov.initProcessing(samplesPerBlock);
-//    ov.reset();
-    
-//    drive.prepare(spec);
-//    drive.reset();
+    distortionProcessor.reset();
+    postProcessor.reset();
 }
 
 void DrivePedalAudioProcessor::releaseResources()
@@ -179,54 +167,28 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     juce::dsp::AudioBlock<float> audioBlock = juce::dsp::AudioBlock<float>(buffer);
     juce::dsp::ProcessContextReplacing<float> context = juce::dsp::ProcessContextReplacing<float>(audioBlock);
     
-    // ---------------------------------------
-    // Main Process
-    // ---------------------------------------
+    /// ---------------------------------------
+    /// Processing
+    /// ---------------------------------------
     
+    /// 1. update processors
+    updateProcessors();
+    
+    /// 2. oversample up
     ov.processSamplesUp(audioBlock);
 
-    // 1. high pass at SIGNAL_HP_FREQ
-    *hp.state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass(getSampleRate(), SIGNAL_HP_FREQ);
-    hp.process(context);
-    // 2. gain (DRIVE_MULTIPLIER * DRIVE + DRIVE_OFFSET)
-    auto rawDriveValue = state.getRawParameterValue("DRIVE");
-    float driveValue = rawDriveValue->load();
-    drive.setGainDecibels((DRIVE_MULTIPLIER * driveValue) + DRIVE_OFFSET);
-    drive.process(context);
-    // 3. cubic waveshaping (soft clip)
-    clip.functionToUse = cubicPolynomial;
-    clip.process(context);
-    // 4. hard clip DRIVE_OFFSET
-    clamp.functionToUse = [](float sample) {
-        return hardClip(sample, CLIP_LIMIT);
-    };
-    clamp.process(context);
-    // 5. trim gain OUTPUT_FACTOR
-    trim.setGainLinear(OUTPUT_FACTOR);
-    trim.process(context);
-    // 6. low pass at OUTPUT_LP_FREQ
-    *lp.state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass(getSampleRate(), OUTPUT_LP_FREQ);
-    lp.process(context);
-    // 7. merge with dry signal and tame volume
+    /// 3. distortion processor
+    distortionProcessor.process(context);
+    
+    /// 4. merge with dry signal and tame volume
     auto& outputBlock = context.getOutputBlock();
     outputBlock.add(dryBlock);
     outputBlock.multiplyBy(OUTPUT_FACTOR);
     
-    // ---------------------------------------
-    // Post processing
-    // ---------------------------------------
+    /// 5. post processor
+    postProcessor.process(context);
     
-    // 8. Tone
-    auto rawToneValue = state.getRawParameterValue("TONE");
-    float toneValue = rawToneValue->load();
-    *tone.state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(getSampleRate(), OUTPUT_LP_FREQ, DEFAULT_Q, toneValue);
-    tone.process(context);
-    // 9. Volume
-    auto rawLevelValue = state.getRawParameterValue("LEVEL");
-    float levelValue = rawLevelValue->load();
-    level.setGainLinear(levelValue);
-    level.process(context);
-    
+    /// 6. oversample down
     ov.processSamplesDown(audioBlock);
 }
 
@@ -282,4 +244,28 @@ float DrivePedalAudioProcessor::cubicPolynomial(float sample)
 float DrivePedalAudioProcessor::hardClip(float sample, float minmax)
 {
     return juce::jlimit(-(minmax), minmax, sample);
+}
+
+void DrivePedalAudioProcessor::updateProcessors()
+{
+    float sampleRate = getSampleRate();
+
+    auto rawDriveValue = state.getRawParameterValue("DRIVE");
+    float driveValue = rawDriveValue->load();
+    auto rawToneValue = state.getRawParameterValue("TONE");
+    float toneValue = rawToneValue->load();
+    auto rawLevelValue = state.getRawParameterValue("LEVEL");
+    float levelValue = rawLevelValue->load();
+    
+    *distortionProcessor.get<hpFilterIndex>().state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderHighPass(sampleRate, SIGNAL_HP_FREQ);
+    distortionProcessor.get<preGainIndex>().setGainDecibels((DRIVE_MULTIPLIER * driveValue) + DRIVE_OFFSET);
+    distortionProcessor.get<softClipIndex>().functionToUse = cubicPolynomial;
+    distortionProcessor.get<hardClipIndex>().functionToUse = [](float sample) {
+        return hardClip(sample, CLIP_LIMIT);
+    };
+    distortionProcessor.get<postGainIndex>().setGainLinear(OUTPUT_FACTOR);
+    *distortionProcessor.get<lpFilterIndex>().state = *juce::dsp::IIR::Coefficients<float>::makeFirstOrderLowPass(sampleRate, OUTPUT_LP_FREQ);
+    
+    *postProcessor.get<toneIndex>().state = *juce::dsp::IIR::Coefficients<float>::makeHighShelf(sampleRate, OUTPUT_LP_FREQ, DEFAULT_Q, toneValue);
+    postProcessor.get<volumeIndex>().setGainLinear(levelValue);
 }
