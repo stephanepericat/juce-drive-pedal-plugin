@@ -26,9 +26,10 @@ public:
 
 private:
     juce::Slider driveKnob, levelKnob, toneKnob;
-    juce::ToggleButton bypass;
+    juce::ToggleButton bypass { "Bypass" };
 
     std::unique_ptr<juce::AudioProcessorValueTreeState::SliderAttachment> driveKnobAttachment, levelKnobAttachment, toneKnobAttachment;
+    std::unique_ptr<juce::AudioProcessorValueTreeState::ButtonAttachment> bypassAttachment;
     // This reference is provided as a quick way for your editor to
     // access the processor object that created it.
     DrivePedalAudioProcessor& audioProcessor;

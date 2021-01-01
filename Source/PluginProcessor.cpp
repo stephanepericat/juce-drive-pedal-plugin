@@ -164,6 +164,13 @@ void DrivePedalAudioProcessor::processBlock (juce::AudioBuffer<float>& buffer, j
     for (auto i = totalNumInputChannels; i < totalNumOutputChannels; ++i)
         buffer.clear (i, 0, buffer.getNumSamples());
     
+    // bypass ?
+    auto rawBypassValue = state.getRawParameterValue("BYPASS");
+    int bypassValue = rawBypassValue->load();
+    
+    if(bypassValue == 1)
+        return;
+    
     // store dry signal for later
     juce::AudioBuffer<float> drySignal((size_t)0, buffer.getNumSamples());
     drySignal = buffer;
@@ -258,6 +265,7 @@ juce::AudioProcessorValueTreeState::ParameterLayout DrivePedalAudioProcessor::cr
     params.push_back(std::make_unique<juce::AudioParameterFloat>("DRIVE", "Drive", juce::NormalisableRange<float>(0.f, 24.f, .1f), 12.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("LEVEL", "Level", juce::NormalisableRange<float>(0.f, 2.f, .01f), 1.f));
     params.push_back(std::make_unique<juce::AudioParameterFloat>("TONE", "Tone", juce::NormalisableRange<float>(.1f, 1.5f, .01f), .8f));
+    params.push_back(std::make_unique<juce::AudioParameterInt>("BYPASS", "Bypass", 0, 1, 0));
     
     return { params.begin(), params.end() };
 }

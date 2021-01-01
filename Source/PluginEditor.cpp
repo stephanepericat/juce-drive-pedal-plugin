@@ -25,14 +25,12 @@ DrivePedalAudioProcessorEditor::DrivePedalAudioProcessorEditor (DrivePedalAudioP
     toneKnob.setTextBoxStyle(juce::Slider::TextBoxBelow, true, 50, 25);
     addAndMakeVisible(toneKnob);
 
-//    bypass.onClick = [&]() {
-//
-//    };
     addAndMakeVisible(bypass);
     
     driveKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.state, "DRIVE", driveKnob);
     levelKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.state, "LEVEL", levelKnob);
     toneKnobAttachment = std::make_unique<juce::AudioProcessorValueTreeState::SliderAttachment>(audioProcessor.state, "TONE", toneKnob);
+    bypassAttachment = std::make_unique<juce::AudioProcessorValueTreeState::ButtonAttachment>(audioProcessor.state, "BYPASS", bypass);
     // Make sure that before the constructor has finished, you've set the
     // editor's size to whatever you need it to be.
     setSize(250, 550);
@@ -62,5 +60,5 @@ void DrivePedalAudioProcessorEditor::resized()
 
     driveKnob.setBounds(getWidth() / 2 - 100, getHeight() / 2 - 100, 200, 200);
     
-    bypass.setBounds(getWidth() / 2 - 50, getHeight() - 120, 100, 100);
+    bypass.setBounds(getWidth() / 2 - 40, getHeight() - 120, 80, 25);
 }
